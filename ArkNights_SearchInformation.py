@@ -8,12 +8,13 @@
 # ==========================================
 from urllib import request
 import json
+from time import sleep
 
 
 def ArkNight(token):
     '''
     Url 获取到的寻访信息token
-    E.G https://ak.hypergryph.com/user/api/inquiry/gacha?page=2&token=XVQkRmXKi6HOMi7kKnhBKsh5&channelId=1
+    E.G https://ak.hypergryph.com/user/api/inquiry/gacha?page=2&token=xxxxxxx&channelId=1
     输出数据示例
     {'Total':10,'list':[['斩荆辟路','梅',4],['斩荆辟路','地灵',4]]}
     '''
@@ -21,6 +22,7 @@ def ArkNight(token):
     Temp_Result_Lst = []  # 存数据的
     PageNum = 1
     while True:
+        sleep(1)  # 防止短时间内多次请求导致ip被封
         headers = {  # 请求的头部
             'referer': "https://ak.hypergryph.com/user/inquiryGacha",
             'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36 Edg/88.0.705.63",
