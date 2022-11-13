@@ -47,7 +47,8 @@ def ArkNight(token):
                                             j['name'],  # 角色名
                                             # 星级，返回的星级都-1，故+1还原
                                             int(j['rarity']) + 1,
-                                            ])
+                                            i['ts']]  # 时间戳
+                                           )
             print('\r[debug]已获取第%s页信息' % PageNum, end='')  # 覆盖打印
             PageNum += 1
     # 循环结束后进行数据统合并返回

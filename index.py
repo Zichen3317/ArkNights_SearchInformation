@@ -13,17 +13,44 @@ import sys
 import ArkNights_SearchInformation
 import CSVTool
 from datetime import datetime
-Ver = '1.0Alpha'
+from time import localtime, strftime
+Ver = '1.3Alpha'
 
 print("ArkNights_SearchInformation %s Service Start" % Ver)
 
 
-def Get_Store(Token):
+def Merge(Path: list):
+    '''
+    合并多个寻访记录表
+    '''
+    print('[Debug]共有%s个文件' % len(Path))
+    Total_lst = []  # 用于合并的列表
+    header = ['pool', 'name', 'rarity', 'ts']
+    for i in Path:
+        for j in CSVTool.Tool(i).READ()[1:]:  # 第一个是表头，不要了
+            # 后面要去除重复项需要用到set()，但set()规定列表内不能有可变元素（元组是不可变元素）
+            Total_lst.append(tuple(j))
+    Total_lst = set(Total_lst)  # 删除重复项
+    # 重新将内部元素转为列表
+    Temp_lst = []
+    for i in Total_lst:
+        Temp_lst.append(list(i))
+    # 排序
+    Total = sorted(Total_lst, key=lambda i: i[-1], reverse=True)
+    filePath = 'Merge-{}.csv'.format(str(datetime.today()).split('.')[
+        0].replace(' ', '-').replace(':', '-'))
+    Tool = CSVTool.Tool(filePath)
+    Tool.WRITE(header, {})
+    Tool.ADD(Total)
+    print("[ANSI]已完成合并✓\n文件保存至 %s" % filePath)
+
+
+def Get_Store(Token: str):
     Information_dict = ArkNights_SearchInformation.ArkNight(Token)
     print("\n[ANSI]已获取寻访信息✓ (共 %s 条记录)" %
           Information_dict['Total'])
     # 写入文件
-    header = ['pool', 'name', 'rarity']
+    header = ['pool', 'name', 'rarity', 'ts']
     filePath = './{}-{}-ArkNights_SearchInformation.csv'.format(str(datetime.today()).split('.')[
         0].replace(' ', '-').replace(':', '-'), Token)
     Tool = CSVTool.Tool(filePath)
@@ -32,7 +59,7 @@ def Get_Store(Token):
     print("[ANSI]已完成写入✓\n文件保存至 %s" % filePath)
 
 
-def Read_Analyse(CsvPath):
+def Read_Analyse(CsvPath: str):
     '''
     CsvPath csv文件
     '''
@@ -40,7 +67,9 @@ def Read_Analyse(CsvPath):
     print('\r[debug]已读取文件✓', end='')
     Rarity_3, Rarity_4, Rarity_5, Rarity_6 = 0, 0, 0, 0  # 抽出稀有度角色个数
     Character_lst, Pool_lst = [], []  # 统计角色和池子
-    Character_Count_lst, Pool_Count_lst = [], []
+    Pool_Count_lst = []
+    # 六星和五星池子
+    Six_Character_lst, Five_Character_lst = [], []
     for i in Data_list:
         # 先统计各稀有度抽出个数
         if i[2] == '3':
@@ -49,55 +78,72 @@ def Read_Analyse(CsvPath):
             Rarity_4 += 1
         elif i[2] == '5':
             Rarity_5 += 1
+            Five_Character_lst.append(i[1])
         elif i[2] == '6':
             Rarity_6 += 1
+            Six_Character_lst.append(i[1])
         Character_lst.append(i[1])
         Pool_lst.append(i[0])
 
     Total = Rarity_3+Rarity_4+Rarity_5+Rarity_6  # 全部角色个数
     # 所占比重
-    Rarity_3_percentage = round(Rarity_3/Total, 4)
-    Rarity_4_percentage = round(Rarity_4/Total, 4)
-    Rarity_5_percentage = round(Rarity_5/Total, 4)
-    Rarity_6_percentage = round(Rarity_6/Total, 4)
+    Rarity_3_percentage = round(Rarity_3/Total, 4)*100
+    Rarity_4_percentage = round(Rarity_4/Total, 4)*100
+    Rarity_5_percentage = round(Rarity_5/Total, 4)*100
+    Rarity_6_percentage = round(Rarity_6/Total, 4)*100
 
-    # 统计池子和角色个数
-    Character_set = set(Character_lst)
+    # 统计池子个数
     Pool_set = set(Pool_lst)
-    for i in Character_set:
-        Character_Count_lst.append([i, Character_lst.count(i)])
-    for i in Pool_set:
+    for i in Pool_set:  # [池子名称,抽数]
         Pool_Count_lst.append([i, Pool_lst.count(i)])
 
-    print('\r[debug]数据处理完毕✓', end='')
-    # 数据显示
+    # 统计六星出货数据
+    Six_Character_data = ''
+    Six_Character_set = set(Six_Character_lst)
+    for i in Six_Character_set:  # [池子名称,抽数]
+        Six_Character_data += '%s[%s]\n' % (i, Character_lst.count(i))
+    # 统计五星出货数据
+    Five_Character_data = ''
+    Five_Character_set = set(Five_Character_lst)
+    for i in Five_Character_set:  # [池子名称,抽数]
+        Five_Character_data += '%s[%s]\n' % (i, Character_lst.count(i))
+
+# 将池子名称和抽数合并为一个字符串
+    Pool_data = ''
+    for i in Pool_Count_lst:
+        Pool_data += '%s:总 %s抽\n' % (i[0], i[1])
+
+    # 角色同理
     message = '''
-=====ArkNights·寻访数据分析=====
-作者:ZiChen
-统计文件路径:{filepath}
-数据总数:{total}
--------------------------------
-抽到最多的角色：{max_char}[{max_char_num}]
-抽的最多的池子:{max_pool}[{max_pool_num}]
--------------------------------
-三星角色抽取总数:{r3_n}[{r3_p}] 
-四星角色抽取总数:{r4_n}[{r4_p}] 
-五星角色抽取总数:{r5_n}[{r5_p}] 
-六星角色抽取总数:{r6_n}[{r6_p}] 
-===============================
-'''.format(
-        filepath=CsvPath,
-        total=Total,
-        max_char=sorted(Character_Count_lst,
-                        key=lambda i: i[-1], reverse=True)[0][0],
-        max_char_num=sorted(Character_Count_lst,
-                            key=lambda i: i[-1], reverse=True)[0][-1],
-        max_pool=sorted(
-            Pool_Count_lst, key=lambda i: i[-1], reverse=True)[0][0],
-        max_pool_num=sorted(
-            Pool_Count_lst, key=lambda i: i[-1], reverse=True)[0][-1],
-        r3_n=Rarity_3, r4_n=Rarity_4, r5_n=Rarity_5, r6_n=Rarity_6,
-        r3_p=Rarity_3_percentage, r4_p=Rarity_4_percentage, r5_p=Rarity_5_percentage, r6_p=Rarity_6_percentage,
+-----明日方舟寻访分析----
+统计时间区间 {starttime} - {endtime}
+
+----总计: {Total} 抽----
+6星 {Six}人 概率 {SixP}%
+5星 {Five}人 概率 {FiveP}%
+4星 {Four}人 概率 {FourP}%
+3星 {Three}人 概率 {ThreeP}%
+
+--------平均出货--------
+6星 {SixAve}抽
+5星 {FiveAve}抽
+
+--------卡池数据--------
+{Pool_data}
+------六星出货记录------
+{Six_Character_data}
+------五星出货记录------
+{Five_Character_data}
+    '''.format(
+        starttime=strftime("%m月%d日 %H:%M:%S",
+                           localtime(int(Data_list[-1][-1]))),
+        endtime=strftime("%m月%d日 %H:%M:%S", localtime(int(Data_list[0][-1]))),
+        Total=Total, Six=Rarity_6, Five=Rarity_5, Four=Rarity_4, Three=Rarity_3,
+        SixP=Rarity_6_percentage, FiveP=Rarity_5_percentage, FourP=Rarity_4_percentage, ThreeP=Rarity_3_percentage,
+        SixAve=round(Total/Rarity_6, 1), FiveAve=round(Total/Rarity_5, 1),
+        Pool_data=Pool_data,
+        Six_Character_data=Six_Character_data,
+        Five_Character_data=Five_Character_data,
     )
     print(message)
 
@@ -111,12 +157,25 @@ if __name__ == '__main__':
     MainWindow.show()
 
     def Get():
+        '''
+        pyqt5 接口函数
+        '''
         Get_Store(ui.lineEdit_Token.text())
 
     def Analyse():
+        '''
+        pyqt5 接口函数
+        '''
         Read_Analyse(ui.lineEdit_FilesPath.text())
+
+    def Merge_IN():
+        '''
+        pyqt5 接口函数
+        '''
+        Merge(ui.textEdit_merge_filepath.toPlainText().split('|'))
 
     ui.pushButton_Get.clicked.connect(Get)
     ui.pushButton_Analyse.clicked.connect(Analyse)
+    ui.pushButton_merge.clicked.connect(Merge_IN)
 
     sys.exit(app.exec())
