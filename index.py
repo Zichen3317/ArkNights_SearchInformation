@@ -14,7 +14,7 @@ import ArkNights_SearchInformation
 import CSVTool
 from datetime import datetime
 from time import localtime, strftime
-Ver = '1.3Alpha'
+Ver = '1.3.1Alpha'
 
 print("ArkNights_SearchInformation %s Service Start" % Ver)
 
@@ -87,11 +87,12 @@ def Read_Analyse(CsvPath: str):
 
     Total = Rarity_3+Rarity_4+Rarity_5+Rarity_6  # 全部角色个数
     # 所占比重
-    Rarity_3_percentage = round(Rarity_3/Total, 4)*100
-    Rarity_4_percentage = round(Rarity_4/Total, 4)*100
-    Rarity_5_percentage = round(Rarity_5/Total, 4)*100
-    Rarity_6_percentage = round(Rarity_6/Total, 4)*100
 
+    Rarity_3_percentage = round((Rarity_3/Total)*100, 2)
+    Rarity_4_percentage = round((Rarity_4/Total)*100, 2)
+    Rarity_5_percentage = round((Rarity_5/Total)*100, 2)
+    Rarity_6_percentage = round((Rarity_6/Total)*100, 2)
+    #print('\n[debug]3:{}-{} 4:{}-{}'.format(Rarity_3,Rarity_3_percentage, Rarity_4, Rarity_4_percentage))
     # 统计池子个数
     Pool_set = set(Pool_lst)
     for i in Pool_set:  # [池子名称,抽数]
