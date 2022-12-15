@@ -17,6 +17,10 @@ def ArkNight(token):
     E.G https://ak.hypergryph.com/user/api/inquiry/gacha?page=2&token=xxxxxxx&channelId=1
     输出数据示例
     {'Total':10,'list':[['斩荆辟路','梅',4],['斩荆辟路','地灵',4]]}
+    输出数据类型
+    Total:int
+    角色稀有度:int
+    池子名称，角色名称:str
     '''
     Out_Result_Dict = {}  # 输出用字典
     Temp_Result_Lst = []  # 存数据的
